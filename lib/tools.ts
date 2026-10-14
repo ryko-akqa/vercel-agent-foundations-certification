@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { ApiRequestError, createReturn, getCategories, getOrder, getProducts, preauthorizeRefund, notifyReturnInProcess } from "@/lib/api";
+import { ApiRequestError, createReturn, getCategories, getOrder, getProducts, preauthorizeRefund, notifyReturnInProcess, getProductById } from "@/lib/api";
 
 export const searchProducts = tool({
   description: `Search the Vercel swag store product catalog. Use this whenever the user asks about products, what the store sells, or wants recommendations. Optionally narrow results to a single category.`,
@@ -94,6 +94,23 @@ export const returnOrder = tool({
         reason,
       });
       return { returnId: filed.id, status: filed.status };
+    } catch (err) {
+      const message =
+        err instanceof ApiRequestError ? err.message : "Unknown error";
+      return { error: message };
+    }
+  },
+});
+
+export const getProductDetails = tool({
+  description: `Get the details of a product by its ID. Use this when the user asks about a specific product. Reaches for getProductDetails whenever the user asks about a specific item or product.`,
+  inputSchema: z.object({
+    productId: z.string().describe("The ID of the product to get details for."),
+  }),
+  execute: async ({ productId }) => {
+    try {
+      const { id, name, slug, images, price, currency, category, description, tags } = await getProductById(productId);
+      return { id, name, slug, images, price, currency, category, description, tags };
     } catch (err) {
       const message =
         err instanceof ApiRequestError ? err.message : "Unknown error";
